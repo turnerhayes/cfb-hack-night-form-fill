@@ -28,7 +28,7 @@ function getNextWeekEvent() {
 
 function getInputValues(eventData) {
   return request({
-    uri: 'https://api.meetup.com/Code-for-Boston/events/jpwlqqyzdbhb/rsvps',
+    uri: `https://api.meetup.com/Code-for-Boston/events/${eventData.id}/rsvps`,
     qs: {
       key: process.env.MEETUP_API_KEY,
       sign: 'true',
