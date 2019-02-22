@@ -6,7 +6,7 @@ const FORM_URL = `https://docs.google.com/forms/d/e/${process.env.GOOGLE_FORM_ID
 
 const RESPONSE_URL = `https://docs.google.com/forms/d/e/${process.env.GOOGLE_FORM_ID}/formResponse`;
 
-function getFormValues(page, formVals) {
+async function getFormValues(page, formVals) {
   return page.evaluate(
     function (formVals) {
       function setFieldValue(selector, value) {
