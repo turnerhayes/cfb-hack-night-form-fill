@@ -6,13 +6,17 @@
   "scripts": {
     "start": "node ./server"
   },
+  "bin": {
+    "fill-hack-night-form": "./fill-form.js"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/turnerhayes/cfb-hack-night-form-fill"
   },
-  "author": "",
+  "author": "Turner Hayes<dev@turnerhaye.com>",
   "license": "ISC",
   "dependencies": {
+    "cheerio": "^1.0.0-rc.2",
     "debug": "^4.1.1",
     "dotenv": "^6.2.0",
     "express": "^4.16.4",
@@ -21,10 +25,12 @@
     "morgan": "^1.9.1",
     "phantom": "^6.0.3",
     "phantomjs-prebuilt": "^2.1.16",
+    "puppeteer": "^1.12.2",
     "request": "^2.88.0",
     "request-promise": "^4.2.2"
   },
   "devDependencies": {
+    "@types/cheerio": "^0.22.10",
     "@types/express": "^4.16.1",
     "@types/node": "^11.9.4"
   }
