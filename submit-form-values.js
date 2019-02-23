@@ -3,16 +3,15 @@ const debug = require('debug')('hack-night-form-fill:submit-form');
 
 const formValueGetters = require('./form-values');
 
-const FORM_VALUE_GETTER = 'puppeteer';
+const GET_FORM_VALUES_METHOD = process.env.GET_FORM_VALUES_METHOD || 'puppeteer';
 
 const FORM_URL = `https://docs.google.com/forms/d/e/${process.env.GOOGLE_FORM_ID}/viewform`;
 
 const RESPONSE_URL = `https://docs.google.com/forms/d/e/${process.env.GOOGLE_FORM_ID}/formResponse`;
 
 function fillOutAndSubmitForm(formVals) {
-  console.log(formVals);
   return Promise.resolve(
-    formValueGetters[FORM_VALUE_GETTER](FORM_URL, formVals)
+    formValueGetters[GET_FORM_VALUES_METHOD](FORM_URL, formVals)
   ).then(
     function (formValues) {
       

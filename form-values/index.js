@@ -1,5 +1,5 @@
-const phantom = require('./phantomjs').getFormValues;
-const puppeteer = require('./puppeteer').getFormValues;
+const phantom = require('./phantomjs');
+const puppeteer = require('./puppeteer');
 
 module.exports = {
   phantom,
