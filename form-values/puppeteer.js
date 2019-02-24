@@ -1,114 +1,49 @@
 const puppeteer = require('puppeteer');
 
-function getValuesFromPage(page, formVals) {
-  return page.evaluate(
-    function (formVals) {
-      function setFieldValue(selector, value) {
-        let wrapper = document;
+/**
+ * Fills out the form and returns the value map to submit (as well as optionally
+ * submitting the form)
+ * 
+ * @param {import("puppeteer").Page} page the Puppeteer page object
+ * @param {FormVals} formVals the input values to enter into the fields
+ * @param {boolean} doSubmit if `true`, submit the form instead of just retrieving values
+ * 
+ * @returns {object} the values to submit to the form action
+ */
+async function getValuesFromPage(page, formVals, doSubmit) {
+  await page.type(
+    'input[aria-label="Event Name"]',
+    formVals.eventName
+  );
 
-        if (arguments.length === 3) {
-          wrapper = arguments[0];
-          selector = arguments[1];
-          value = arguments[2];
-        }
+  // Transform event date from YYYY-MM-DD to the format expected by Chromium:
+  // MMDDYYYY
+  const [year, month, day] = formVals.eventDate.split('-');
 
-        const input = wrapper.querySelector(selector);
+  await page.type(
+    '[aria-label="Event Date &amp; Time"] input[type="date"]',
+    month + day + year
+  );
 
-        if (!input) {
-          return null;
-        }
+  const [hour, minute] = formVals.eventTime.split(':');
 
-        input.focus();
-        input.value = value;
-        input.blur();
-      }
+  await page.type(
+    '[aria-label="Event Date &amp; Time"] input[aria-label="Hour"]',
+    hour
+  );
 
-      function fillDate(wrapper, year, month, day) {
-        if (!year) {
-          throw new Error('No event year given');
-        }
+  await page.type(
+    '[aria-label="Event Date &amp; Time"] input[aria-label="Minute"]',
+    minute
+  );
 
-        if (!month) {
-          throw new Error('No event month given');
-        }
-
-        if (!day) {
-          throw new Error('No event day given');
-        }
-
-        if (setFieldValue(wrapper, 'input[name$="_year"]', year) === null) {
-          throw new Error('Unable to find event year input');
-        }
-
-        if (setFieldValue(wrapper, 'input[name$="_month"]', month) === null) {
-          throw new Error('Unable to find event month input');
-        }
-
-        if (setFieldValue(wrapper, 'input[name$="_day"]', day) === null) {
-          throw new Error('Unable to find event day input');
-        }
-      }
-
-      function fillTime(wrapper, hour, minute) {
-        if (setFieldValue(wrapper, 'input[name$="_hour"]', hour) === null) {
-          throw new Error('Unable to find event hour input');
-        }
-
-        if (setFieldValue(wrapper, 'input[name$="_minute"]', minute) === null) {
-          throw new Error('Unable to find event minute input');
-        }
-      }
-
-      if (setFieldValue('input[aria-label="Event Name"]', formVals.eventName) === null) {
-        throw new Error('Unable to find event name input');
-      }
-
-      function toJSON(form) {
-        const obj = {};
-        const elements = form.querySelectorAll("input, select, textarea");
-        for (let i = 0; i < elements.length; ++i) {
-          const element = elements[i];
-          const name = element.name;
-          const value = element.value;
-
-          if (name) {
-            obj[name] = value;
-          }
-        }
-
-        return obj;
-      }
-
-      const dateTimeWrappers = document.querySelectorAll('[aria-label="Event Date &amp; Time"]');
-
-      Array.from(dateTimeWrappers).forEach(
-        function (wrapper) {
-          if (wrapper.querySelector('input[name$="_year"]')) {
-            const dateParts = formVals.eventDate.split('-');
-
-            const year = dateParts[0];
-
-            const month = dateParts[1];
-
-            const day = dateParts[2];
-
-            fillDate(wrapper, year, month, day);
-          } else {
-            const timeParts = formVals.eventTime.split(':');
-
-            const hour = timeParts[0];
-
-            const minute = timeParts[1];
-
-            fillTime(wrapper, hour, minute);
-          }
-        }
-      );
-
-      if (setFieldValue('input[aria-label="Event Location"]', formVals.eventLocation) === null) {
-        return new Error('Unable to find event location field');
-      }
-
+  await page.type(
+    'input[aria-label="Event Location"]',
+    formVals.eventLocation
+  );
+  
+  const allowWalkinsButton = await page.evaluateHandle(
+    function(allowWalkins) {
       const questionHeaders = document.querySelectorAll('[role="heading"]');
 
       const allowWalkinsHeader = Array.from(questionHeaders).find(
@@ -116,47 +51,94 @@ function getValuesFromPage(page, formVals) {
           return /Are walk-ins welcome to attend the event\?/.test(el.textContent);
         }
       );
-
-      const allowWalkinsHiddenInput = allowWalkinsHeader.closest('[role="listitem"]').querySelector('input[type="hidden"]');
-
-      allowWalkinsHiddenInput.value = formVals.allowWalkins || 'Yes';
-
-      if (setFieldValue('input[aria-label="Event Contact"]', formVals.cfbContactInfo) === null) {
-        return new Error('Unable to find CFB Contact Info input');
-      }
-
-      if (
-        setFieldValue(
-          'textarea[aria-label="Guest List"]',
-          (formVals.attendees || []).join('\n')
-        ) === null
-      ) {
-        return new Error('Unable to find Guest List input');
-      }
-
-      if (formVals.cicContactEmail) {
-        const labelText = "If you have been in touch with a CIC staff member about this event, please provide their email address.";
-        if (setFieldValue(`input[aria-label="${labelText}"]`, formVals.cicContactEmail) === null) {
-          return new Error('Unable to find CIC Contact Email input');
-        }
-      }
-
-      if (formVals.organizationName) {
-        const labelText = "What is the name of the organization hosting this event?";
-        if (setFieldValue(`input[aria-label="${labelText}"]`, formVals.organizationName) === null) {
-          return new Error('Unable to find Organization Name input');
-        }
-      }
-
-      const form = document.querySelector('form[action$="/formResponse"]');
-
-      return toJSON(form);
+      
+      return allowWalkinsHeader.closest('[role="listitem"]').querySelector(`[aria-label="${allowWalkins}"]`);
     },
-    formVals
+    formVals.allowWalkins
   );
+  
+  await allowWalkinsButton.asElement().click();
+  
+  await page.type(
+    'input[aria-label="Event Contact"]',
+    formVals.cfbContactInfo
+  );
+  
+  await page.type(
+    'textarea[aria-label="Guest List"]',
+    (formVals.attendees || []).join('\n')
+  );
+  
+  if (formVals.cicContactEmail) {
+    const labelText = "If you have been in touch with a CIC staff member about this event, please provide their email address.";
+    
+    await page.type(
+      `input[aria-label="${labelText}"]`,
+      formVals.cicContactEmail
+    );
+  }
+  
+  if (formVals.organizationName) {
+    const labelText = "What is the name of the organization hosting this event?";
+    
+    await page.type(
+      `input[aria-label="${labelText}"]`,
+      formVals.organizationName
+    );
+  }
+
+  const formValues = await page.evaluate(
+    function () {
+      const obj = {};
+      const form = document.querySelector('form[action$="/formResponse"]');
+      const elements = form.querySelectorAll("input, select, textarea");
+      for (let i = 0; i < elements.length; ++i) {
+        const element = elements[i];
+        const name = element.name;
+        const value = element.value;
+
+        if (name) {
+          obj[name] = value;
+        }
+      }
+
+      return obj;
+    }
+  );
+  
+  if (doSubmit) {
+    const submitButton = await page.evaluateHandle(
+      function() {
+        return Array.from(
+          document.querySelectorAll('[role="button"]')
+        ).find(
+          function(button) {
+            return button.textContent === 'Submit';
+          }
+        );
+      }
+    );
+
+    if (!submitButton) {
+      throw new Error('Unable to find submit button');
+    }
+
+    await submitButton.asElement().click();
+  }
+
+  return formValues;
 }
 
-async function getFormValues(formURL, formVals) {
+/**
+ * Fills out the form, gets form values, and optionally submits the form
+ * 
+ * @param {string} formURL the URL of the form
+ * @param {FormVals} formVals the values to input into the form
+ * @param {boolean} doSubmit if `true`, submit the form instead of just returning values
+ * 
+ * @returns {object} the values to submit to the form action
+ */
+async function _getFormValues(formURL, formVals, doSubmit) {
   const browser = await puppeteer.launch({
     args: [
       '--no-sandbox',
@@ -166,25 +148,76 @@ async function getFormValues(formURL, formVals) {
 
   const page = await browser.newPage();
 
-  await page.goto(formURL);
+  page.on(
+    'console',
+    function(message, ...args) {
+      const consoleArgs = [
+        'Page console message:',
+        message.text(),
+        ...args
+      ];
 
-  const dimensions = await page.evaluate(() => {
-    return {
-      width: document.documentElement.clientWidth,
-      height: document.documentElement.clientHeight,
-      deviceScaleFactor: window.devicePixelRatio
-    };
-  });
+      if (message.type === 'error') {
+        console.error(...consoleArgs);
+      }
+      else {
+        console.log(...consoleArgs);
+      }
+    }
+  );
 
-  console.log(dimensions);
+  await page.goto(
+    formURL,
+    {
+      waitUntil: 'load',
+    }
+  );
 
-  const values = await getValuesFromPage(page, formVals);
+  let navigatePromise = Promise.resolve();
+
+  if (doSubmit) {
+    navigatePromise = page.waitForResponse(
+      function(response) {
+        return /\/formResponse$/.test(response.url());
+      }
+    );
+  }
+
+  const [values, _] = await Promise.all([
+    getValuesFromPage(page, formVals, doSubmit),
+    navigatePromise,
+  ]);
 
   await browser.close();
   
   return values;
 }
 
+/**
+ * Retrieves the values from the form to submit
+ * 
+ * @param {string} formURL the URL of the form
+ * @param {FormVals} formVals the values to input into the form
+ * 
+ * @returns {object} the values to submit to the form action
+ */
+function getFormValues(formURL, formVals) {
+  return _getFormValues(formURL, formVals, false);
+}
+
+/**
+ * Fills out the form and submits it
+ * 
+ * @param {string} formURL the URL of the form
+ * @param {FormVals} formVals the values to input into the form
+ * 
+ * @returns {object} the values to submit to the form action
+ */
+function fillOutAndSubmitForm(formURL, formVals) {
+  return _getFormValues(formURL, formVals, true);
+}
+
 module.exports = {
   getFormValues,
+  fillOutAndSubmitForm,
 };

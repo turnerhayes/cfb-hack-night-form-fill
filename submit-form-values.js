@@ -9,9 +9,20 @@ const FORM_URL = `https://docs.google.com/forms/d/e/${process.env.GOOGLE_FORM_ID
 
 const RESPONSE_URL = `https://docs.google.com/forms/d/e/${process.env.GOOGLE_FORM_ID}/formResponse`;
 
+const {
+  fillOutAndSubmitForm:getterFillOutAndSubmitForm,
+  getFormValues,
+} = formValueGetters[GET_FORM_VALUES_METHOD];
+
 function fillOutAndSubmitForm(formVals) {
+  if (typeof getterFillOutAndSubmitForm === 'function') {
+    return Promise.resolve(
+      getterFillOutAndSubmitForm(FORM_URL, formVals)
+    );
+  }
+
   return Promise.resolve(
-    formValueGetters[GET_FORM_VALUES_METHOD](FORM_URL, formVals)
+    getFormValues(FORM_URL, formVals)
   ).then(
     function (formValues) {
       
