@@ -8,7 +8,7 @@ function getNextWeekEvent() {
   const dateString = nextWeekDate.toISOString().split('T')[0];
 
   return request({
-    uri: 'https://api.meetup.com/Code-for-Boston/events?no_later_than=2019-02-10',
+    uri: 'https://api.meetup.com/Code-for-Boston/events',
     qs: {
       key: process.env.MEETUP_API_KEY,
       sign: 'true',
@@ -26,7 +26,15 @@ function getNextWeekEvent() {
   );
 }
 
-function getInputValues(eventData) {
+/**
+ * Gets the values to input into the CIC from from the event data
+ * and environment variables
+ * 
+ * @param {object} eventData the event data
+ * 
+ * @returns {Promise<FormInputValues>}
+ */
+function getInputValuesFromEvent(eventData) {
   return request({
     uri: `https://api.meetup.com/Code-for-Boston/events/${eventData.id}/rsvps`,
     qs: {
@@ -65,7 +73,12 @@ function getInputValues(eventData) {
   );
 }
 
-function getEventData() {
+/**
+ * Retrieves the data from Meetup.com that will be input into the CIC form
+ * 
+ * @returns {Promise<FormInputValues>}
+ */
+function getInputValues() {
   debug(`Finding next week's Weekly Hack Night event`);
   return getNextWeekEvent().then(
     function (eventData) {
@@ -74,41 +87,41 @@ function getEventData() {
       }
   
       debug('Getting attendee data');
-      return getInputValues(eventData).then(
-        function (formVals) {
-          if (!formVals.eventName) {
+      return getInputValuesFromEvent(eventData).then(
+        function (inputValues) {
+          if (!inputValues.eventName) {
             throw new Error('No event name given');
           }
   
-          if (!formVals.eventDate) {
+          if (!inputValues.eventDate) {
             throw new Error('No event date given');
           }
   
-          if (!formVals.eventTime) {
+          if (!inputValues.eventTime) {
             throw new Error('No event time given');
           }
   
-          if (!formVals.attendees || formVals.attendees.length === 0) {
+          if (!inputValues.attendees || inputValues.attendees.length === 0) {
             throw new Error('No attendees given');
           }
   
-          if (!formVals.eventLocation) {
+          if (!inputValues.eventLocation) {
             throw new Error('No event location given. Make sure to set the CIC_EVENT_LOCATION environment variable.');
           }
   
-          if (!formVals.allowWalkins || (formVals.allowWalkins !== 'Yes' && formVals.allowWalkins !== 'No')) {
+          if (!inputValues.allowWalkins || (inputValues.allowWalkins !== 'Yes' && inputValues.allowWalkins !== 'No')) {
             throw new Error('No walkins allowed setting given. Make sure to set the WALKINS_ALLOWED_YES_NO environment variable to either Yes or No.');
           }
   
-          if (!formVals.cfbContactInfo) {
+          if (!inputValues.cfbContactInfo) {
             throw new Error('No CfB contact info given. Make sure to set the CFB_CONTACT_INFO environment variable.');
           }
 
-          return formVals;
+          return inputValues;
         }
       );
     }
   );
 }
 
-module.exports = getEventData;
+module.exports = getInputValues;

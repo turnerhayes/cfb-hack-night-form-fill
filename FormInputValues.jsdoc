@@ -1,5 +1,7 @@
 /**
- * @typedef FormVals
+ * @typedef FormInputValues
+ *
+ * @global
  * 
  * @property {string} eventName
  * @property {string} eventDate
@@ -8,6 +10,6 @@
  * @property {string} eventLocation
  * @property {'Yes'|'No'} allowWalkins
  * @property {string} cfbContactInfo
- * @property {string} cicContactEmail
+ * @property {string} [cicContactEmail]
  * @property {string} organizationName
  */

@@ -5,27 +5,27 @@ const puppeteer = require('puppeteer');
  * submitting the form)
  * 
  * @param {import("puppeteer").Page} page the Puppeteer page object
- * @param {FormVals} formVals the input values to enter into the fields
+ * @param {FormInputValues} inputValues the input values to enter into the fields
  * @param {boolean} doSubmit if `true`, submit the form instead of just retrieving values
  * 
- * @returns {object} the values to submit to the form action
+ * @returns {Promise<object>} the values to submit to the form action
  */
-async function getValuesFromPage(page, formVals, doSubmit) {
+async function getValuesFromPage(page, inputValues, doSubmit) {
   await page.type(
     'input[aria-label="Event Name"]',
-    formVals.eventName
+    inputValues.eventName
   );
 
   // Transform event date from YYYY-MM-DD to the format expected by Chromium:
   // MMDDYYYY
-  const [year, month, day] = formVals.eventDate.split('-');
+  const [year, month, day] = inputValues.eventDate.split('-');
 
   await page.type(
     '[aria-label="Event Date &amp; Time"] input[type="date"]',
     month + day + year
   );
 
-  const [hour, minute] = formVals.eventTime.split(':');
+  const [hour, minute] = inputValues.eventTime.split(':');
 
   await page.type(
     '[aria-label="Event Date &amp; Time"] input[aria-label="Hour"]',
@@ -39,7 +39,7 @@ async function getValuesFromPage(page, formVals, doSubmit) {
 
   await page.type(
     'input[aria-label="Event Location"]',
-    formVals.eventLocation
+    inputValues.eventLocation
   );
   
   const allowWalkinsButton = await page.evaluateHandle(
@@ -54,36 +54,36 @@ async function getValuesFromPage(page, formVals, doSubmit) {
       
       return allowWalkinsHeader.closest('[role="listitem"]').querySelector(`[aria-label="${allowWalkins}"]`);
     },
-    formVals.allowWalkins
+    inputValues.allowWalkins
   );
   
   await allowWalkinsButton.asElement().click();
   
   await page.type(
     'input[aria-label="Event Contact"]',
-    formVals.cfbContactInfo
+    inputValues.cfbContactInfo
   );
   
   await page.type(
     'textarea[aria-label="Guest List"]',
-    (formVals.attendees || []).join('\n')
+    (inputValues.attendees || []).join('\n')
   );
   
-  if (formVals.cicContactEmail) {
+  if (inputValues.cicContactEmail) {
     const labelText = "If you have been in touch with a CIC staff member about this event, please provide their email address.";
     
     await page.type(
       `input[aria-label="${labelText}"]`,
-      formVals.cicContactEmail
+      inputValues.cicContactEmail
     );
   }
   
-  if (formVals.organizationName) {
+  if (inputValues.organizationName) {
     const labelText = "What is the name of the organization hosting this event?";
     
     await page.type(
       `input[aria-label="${labelText}"]`,
-      formVals.organizationName
+      inputValues.organizationName
     );
   }
 
@@ -133,12 +133,12 @@ async function getValuesFromPage(page, formVals, doSubmit) {
  * Fills out the form, gets form values, and optionally submits the form
  * 
  * @param {string} formURL the URL of the form
- * @param {FormVals} formVals the values to input into the form
+ * @param {FormInputValues} inputValues the values to input into the form
  * @param {boolean} doSubmit if `true`, submit the form instead of just returning values
  * 
- * @returns {object} the values to submit to the form action
+ * @returns {Promise<object>} the values to submit to the form action
  */
-async function _getFormValues(formURL, formVals, doSubmit) {
+async function _getFormValues(formURL, inputValues, doSubmit) {
   const browser = await puppeteer.launch({
     args: [
       '--no-sandbox',
@@ -184,7 +184,7 @@ async function _getFormValues(formURL, formVals, doSubmit) {
   }
 
   const [values, _] = await Promise.all([
-    getValuesFromPage(page, formVals, doSubmit),
+    getValuesFromPage(page, inputValues, doSubmit),
     navigatePromise,
   ]);
 
@@ -197,24 +197,24 @@ async function _getFormValues(formURL, formVals, doSubmit) {
  * Retrieves the values from the form to submit
  * 
  * @param {string} formURL the URL of the form
- * @param {FormVals} formVals the values to input into the form
+ * @param {FormInputValues} inputValues the values to input into the form
  * 
- * @returns {object} the values to submit to the form action
+ * @returns {Promise<object>} the values to submit to the form action
  */
-function getFormValues(formURL, formVals) {
-  return _getFormValues(formURL, formVals, false);
+function getFormValues(formURL, inputValues) {
+  return _getFormValues(formURL, inputValues, false);
 }
 
 /**
  * Fills out the form and submits it
  * 
  * @param {string} formURL the URL of the form
- * @param {FormVals} formVals the values to input into the form
+ * @param {FormInputValues} inputValues the values to input into the form
  * 
- * @returns {object} the values to submit to the form action
+ * @returns {Promise<object>} the values to submit to the form action
  */
-function fillOutAndSubmitForm(formURL, formVals) {
-  return _getFormValues(formURL, formVals, true);
+function fillOutAndSubmitForm(formURL, inputValues) {
+  return _getFormValues(formURL, inputValues, true);
 }
 
 module.exports = {
