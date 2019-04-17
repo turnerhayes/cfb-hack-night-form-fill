@@ -1,2 +1,2 @@
 #!/bin/bash
-if [ "$(date +%u)" = 2 ]; then node ../client.js https://cfb-hack-night-form.herokuapp.com; fi
+if [ "$(date +%u)" = 3 ]; then node client.js https://cfb-hack-night-form.herokuapp.com; fi
