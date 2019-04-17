@@ -29,4 +29,4 @@ There are two ways to run this: in client-server mode, or locally.
 
 - The app uses (by default) [Puppeteer](https://github.com/GoogleChrome/puppeteer), which will download an instance of Chromuim. This can be rather large, and is only necessary if you are planning to either run the server or run locally (i.e. not if you are only planning to run the client). As documented [here](https://github.com/GoogleChrome/puppeteer/blob/v1.12.2/docs/api.md#environment-variables), you can prevent Puppeteer from downloading Chromium with the environment variable `PUPPETEER_SKIP_CHROMIUM_DOWNLOAD`. Note that this may cause problems if you later decide to run the server or the local script, as the version of Chrome/Chromium you have on your machine (if any) may not be compatible with Puppeteer.
 
-On Heroku you should use the [puppeteer build pack](https://github.com/jontewks/puppeteer-heroku-buildpack).
+On Heroku you should use the [puppeteer build pack](https://github.com/jontewks/puppeteer-heroku-buildpack) and the node js buildpack to get this to work.
