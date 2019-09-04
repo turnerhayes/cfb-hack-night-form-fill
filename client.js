@@ -7,10 +7,12 @@ const {
   INTERNAL_SERVER_ERROR
 } = require('http-status-codes');
 
+const Config = require('./config');
+
 // Poll period, in ms
 const POLL_DELAY = 1000;
 
-let endpoint = process.argv[2] || `http://localhost:${process.env.PORT || 3000}`;
+let endpoint = process.argv[2] || Config.baseUrl;
 
 debug(`Running against endpoint ${endpoint}`);
 

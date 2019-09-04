@@ -6,8 +6,11 @@ const {
   CREATED,
   METHOD_NOT_ALLOWED,
   NO_CONTENT,
+  INTERNAL_SERVER_ERROR,
 } = require('http-status-codes');
+const { requestCredentials } = require('../make-api-call');
 
+const Config = require('../config');
 const { run } = require('../run');
 
 // Duration (in ms) for request data to remain in queue after completion/error
@@ -125,6 +128,27 @@ router.route('/queue/:requestID')
         delete requestQueue[requestID];
 
         res.status(NO_CONTENT).send();
+      }
+    }
+);
+
+router.route('/auth').get((req, res) => res.redirect(
+  `https://secure.meetup.com/oauth2/authorize?client_id=${
+    Config.meetup.clientId
+  }&response_type=code&redirect_uri=${
+    Config.baseUrl
+  }/auth/callback`
+));
+
+router.route("/auth/callback")
+  .get(
+    async (req, res) => {
+      try {
+        await requestCredentials();
+        res.send('Authentication credentials validated. You may close this page.');
+      }
+      catch (ex) {
+        res.status(INTERNAL_SERVER_ERROR).send('Error getting auth credentials: ' + ex.message);
       }
     }
   );

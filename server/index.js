@@ -5,6 +5,7 @@ const {
   NOT_FOUND,
 } = require('http-status-codes');
 
+const Config = require('../config');
 const router = require('./router');
 
 const app = express();
@@ -38,7 +39,7 @@ app.use(
   }
 );
 
-const port = Number(process.env.PORT) || 3000;
+const port = Number(Config.port);
 
 app.listen(
   port,
