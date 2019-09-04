@@ -6,8 +6,7 @@
   "scripts": {
     "server": "node ./server",
     "server:dev": "nodemon ./server",
-    "client": "node ./client.js",
-    "fill": "node ./fill-form.js"
+    "client": "node ./client.js"
   },
   "bin": {
     "fill-hack-night-form": "./fill-form.js"
